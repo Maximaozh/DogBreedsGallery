@@ -7,14 +7,11 @@ import com.example.dogbreedsgallery.data.repository.BreedRepository
 
 object AppDependencies {
 
-    private val database: DogDatabase by lazy {
-        DogDatabase.getInstance(context)
-    }
+    private lateinit var appContext: Context
 
-    private var context: Context? = null
-        get() = field ?: throw IllegalStateException(
-            "AppDependencies.init(context) не был вызван при старте приложения"
-        )
+    private val database: DogDatabase by lazy {
+        DogDatabase.getInstance(appContext)
+    }
 
     val breedDao by lazy { database.breedDao() }
 
@@ -25,7 +22,14 @@ object AppDependencies {
         )
     }
 
-    fun init(appContext: Context) {
-        context = appContext.applicationContext
+
+    fun init(context: Context) {
+        appContext = context.applicationContext
+    }
+
+    private fun requireInited() {
+        check(::appContext.isInitialized) {
+            "AppDependencies.init(context) не был вызван при старте приложения"
+        }
     }
 }

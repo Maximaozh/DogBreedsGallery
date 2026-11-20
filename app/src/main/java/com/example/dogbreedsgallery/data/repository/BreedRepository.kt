@@ -5,6 +5,7 @@ import com.example.dogbreedsgallery.data.local.BreedEntity
 import com.example.dogbreedsgallery.data.remote.DogApiService
 import com.example.dogbreedsgallery.data.remote.dto.BreedImageDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 
 class BreedRepository(
