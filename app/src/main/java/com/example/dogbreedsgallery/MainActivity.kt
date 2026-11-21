@@ -20,8 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.autoSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -31,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.dogbreedsgallery.navigation.NavKey
+import com.example.dogbreedsgallery.ui.breedlist.BreedListScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,11 +47,11 @@ class MainActivity : ComponentActivity() {
 }
 @Composable
 fun DogBreedsApp() {
-    val backStack: SnapshotStateList<NavKey> = rememberSaveable(saver = autoSaver()) {
+    val backStack: SnapshotStateList<NavKey> = rememberSaveable {
         listOf<NavKey>(NavKey.BreedList).toMutableStateList()
     }
 
-    var selectedTab by remember { mutableStateOf<NavKey>(NavKey.BreedList) }
+    var selectedTab by rememberSaveable { mutableStateOf<NavKey>(NavKey.BreedList) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -88,7 +87,11 @@ fun DogBreedsApp() {
                 .padding(innerPadding),
             entryProvider = entryProvider {
                 entry<NavKey.BreedList> {
-                    BreedListScreenPlaceholder()
+                    BreedListScreen(
+                        onBreedClick = { breedId ->
+                            backStack.add(NavKey.BreedDetails(breedId))
+                        }
+                    )
                 }
                 entry<NavKey.BreedDetails> { key ->
                     BreedDetailsScreenPlaceholder(breedId = key.breedId)
@@ -98,17 +101,6 @@ fun DogBreedsApp() {
                 }
             }
         )
-    }
-}
-
-@Composable
-fun BreedListScreenPlaceholder() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Здесь будет список пород")
     }
 }
 
