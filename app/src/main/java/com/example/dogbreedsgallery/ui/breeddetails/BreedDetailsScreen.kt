@@ -1,6 +1,7 @@
 package com.example.dogbreedsgallery.ui.breeddetails
 
-//помогите. Я не могу с этими мпортами ИХ ПРОСТО МРАК.
+// Мама...
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,7 +52,9 @@ fun BreedDetailsScreen(
     breedId: Int,
     onBackClick: () -> Unit
 ) {
-    val viewModel: BreedDetailsViewModel = viewModel {
+    val viewModel: BreedDetailsViewModel = viewModel(
+        key = "breed_details_$breedId"
+    ) {
         BreedDetailsViewModel(
             repository = AppDependencies.breedRepository,
             breedId = breedId
@@ -53,6 +62,7 @@ fun BreedDetailsScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val galleryState by viewModel.galleryState.collectAsState()
 
     Scaffold(
         topBar = {
@@ -123,7 +133,10 @@ fun BreedDetailsScreen(
                 }
 
                 is BreedDetailsUiState.Success -> {
-                    BreedDetailsContent(breed = state.breed)
+                    BreedDetailsContent(
+                        breed = state.breed,
+                        galleryState = galleryState
+                    )
                 }
             }
         }
@@ -132,7 +145,8 @@ fun BreedDetailsScreen(
 
 @Composable
 private fun BreedDetailsContent(
-    breed: com.example.dogbreedsgallery.data.local.BreedEntity
+    breed: com.example.dogbreedsgallery.data.local.BreedEntity,
+    galleryState: BreedGalleryState
 ) {
     Column(
         modifier = Modifier
@@ -141,30 +155,7 @@ private fun BreedDetailsContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        SubcomposeAsyncImage(
-            model = breed.imageUrl,
-            contentDescription = breed.name,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(240.dp),
-            contentScale = ContentScale.Crop
-        ) {
-            when (painter.state) {
-                is AsyncImagePainter.State.Loading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is AsyncImagePainter.State.Error -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Фото недоступно")
-                    }
-                }
-                else -> {
-                    SubcomposeAsyncImageContent()
-                }
-            }
-        }
+        PhotoGallery(breed = breed, galleryState = galleryState)
 
         Text(
             text = breed.name,
@@ -200,7 +191,6 @@ private fun BreedDetailsContent(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
-
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
@@ -252,5 +242,88 @@ private fun BreedDetailsContent(
         }
 
         Spacer(modifier = Modifier.height(80.dp))
+    }
+}
+@Composable
+private fun PhotoGallery(
+    breed: com.example.dogbreedsgallery.data.local.BreedEntity,
+    galleryState: BreedGalleryState
+) {
+    val photos: List<String> = when (galleryState) {
+        is BreedGalleryState.Loaded -> galleryState.images.map { it.url }
+        is BreedGalleryState.Empty -> listOf(breed.imageUrl).filter { it.isNotEmpty() }
+    }
+
+    if (photos.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Фото недоступно")
+        }
+        return
+    }
+
+    val pagerState = rememberPagerState(pageCount = { photos.size })
+
+    Column {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+        ) { page ->
+            SubcomposeAsyncImage(
+                model = photos[page],
+                contentDescription = "${breed.name}, фото ${page + 1} из ${photos.size}",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            ) {
+                when (painter.state) {
+                    is AsyncImagePainter.State.Loading -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                    is AsyncImagePainter.State.Error -> {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Фото недоступно")
+                        }
+                    }
+                    else -> {
+                        SubcomposeAsyncImageContent()
+                    }
+                }
+            }
+        }
+
+        if (photos.size > 1) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                repeat(photos.size) { index ->
+                    val color = if (index == pagerState.currentPage) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    }
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                    )
+                }
+            }
+        }
     }
 }

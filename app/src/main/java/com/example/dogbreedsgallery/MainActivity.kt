@@ -1,12 +1,9 @@
 package com.example.dogbreedsgallery
 
-// ААА НУ ПОЧЕМУ ВАС ТАК МНОГО, Я ИМЕЮ НЕГАТИВНОЕ ОТНОШЕНИЕ К ЭТИМ ИМПОРТАМ
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -19,19 +16,16 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.dogbreedsgallery.navigation.NavKey
 import com.example.dogbreedsgallery.ui.breeddetails.BreedDetailsScreen
 import com.example.dogbreedsgallery.ui.breedlist.BreedListScreen
+import com.example.dogbreedsgallery.ui.favorites.FavoritesScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,35 +41,39 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
 fun DogBreedsApp() {
     val backStack: SnapshotStateList<NavKey> = rememberSaveable {
         listOf<NavKey>(NavKey.BreedList).toMutableStateList()
     }
 
-    var selectedTab by rememberSaveable { mutableStateOf<NavKey>(NavKey.BreedList) }
+    val currentScreen: NavKey = backStack.lastOrNull() ?: NavKey.BreedList
 
+    val previousScreen: NavKey? = backStack.getOrNull(backStack.lastIndex - 1)
+
+    val homeSelected: Boolean = currentScreen is NavKey.BreedList ||
+            (currentScreen is NavKey.BreedDetails && previousScreen !is NavKey.Favorites)
+    val favoritesSelected: Boolean = currentScreen is NavKey.Favorites ||
+            (currentScreen is NavKey.BreedDetails && previousScreen is NavKey.Favorites)
+
+    fun goBack() {
+        android.util.Log.d("DogNav", "goBack, стек: $backStack")
+        backStack.removeLastOrNull()
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = selectedTab == NavKey.BreedList,
-                    onClick = {
-                        selectedTab = NavKey.BreedList
-                        backStack.clear()
-                        backStack.add(NavKey.BreedList)
-                    },
+                    selected = homeSelected,
+                    onClick = { backStack.add(NavKey.BreedList) },
                     icon = { Icon(Icons.Default.Home, contentDescription = "Главная") },
                     label = { Text("Главная") }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == NavKey.Favorites,
-                    onClick = {
-                        selectedTab = NavKey.Favorites
-                        backStack.clear()
-                        backStack.add(NavKey.Favorites)
-                    },
+                    selected = favoritesSelected,
+                    onClick = { backStack.add(NavKey.Favorites) },
                     icon = { Icon(Icons.Default.Favorite, contentDescription = "Избранное") },
                     label = { Text("Избранное") }
                 )
@@ -98,37 +96,17 @@ fun DogBreedsApp() {
                 entry<NavKey.BreedDetails> { key ->
                     BreedDetailsScreen(
                         breedId = key.breedId,
-                        onBackClick = {
-                            backStack.removeLastOrNull()
-                        }
+                        onBackClick = { goBack() }
                     )
                 }
                 entry<NavKey.Favorites> {
-                    FavoritesScreenPlaceholder()
+                    FavoritesScreen(
+                        onBreedClick = { breedId ->
+                            backStack.add(NavKey.BreedDetails(breedId))
+                        }
+                    )
                 }
             }
         )
-    }
-}
-
-@Composable
-fun BreedDetailsScreenPlaceholder(breedId: Int) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Детали породы #$breedId")
-    }
-}
-
-@Composable
-fun FavoritesScreenPlaceholder() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Здесь будут избранные породы")
     }
 }
