@@ -1,5 +1,6 @@
 package com.example.dogbreedsgallery
 
+// ААА НУ ПОЧЕМУ ВАС ТАК МНОГО, Я ИМЕЮ НЕГАТИВНОЕ ОТНОШЕНИЕ К ЭТИМ ИМПОРТАМ
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.example.dogbreedsgallery.navigation.NavKey
+import com.example.dogbreedsgallery.ui.breeddetails.BreedDetailsScreen
 import com.example.dogbreedsgallery.ui.breedlist.BreedListScreen
 
 class MainActivity : ComponentActivity() {
@@ -94,7 +96,12 @@ fun DogBreedsApp() {
                     )
                 }
                 entry<NavKey.BreedDetails> { key ->
-                    BreedDetailsScreenPlaceholder(breedId = key.breedId)
+                    BreedDetailsScreen(
+                        breedId = key.breedId,
+                        onBackClick = {
+                            backStack.removeLastOrNull()
+                        }
+                    )
                 }
                 entry<NavKey.Favorites> {
                     FavoritesScreenPlaceholder()

@@ -9,7 +9,6 @@ activityCompose = "1.13.0"
 kotlin = "2.2.10"
 composeBom = "2026.02.01"
 
-
 ksp = "2.3.13"
 coroutines = "1.11.0"
 lifecycleViewmodelCompose = "2.11.1"

@@ -1,5 +1,6 @@
 package com.example.dogbreedsgallery.ui.breedlist
 
+// тут хотяб нормально импортов
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dogbreedsgallery.data.local.BreedEntity
