@@ -57,7 +57,6 @@ fun FavoritesScreen(
             }
 
             is FavoritesUiState.Empty -> {
-                // Дружелюбное сообщение вместо пустого экрана
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally

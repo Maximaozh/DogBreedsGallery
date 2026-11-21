@@ -28,7 +28,6 @@ interface BreedDao {
     @Query("SELECT COUNT(*) FROM breeds")
     suspend fun countBreeds(): Int
 
-    // Картинки
     @Query("SELECT * FROM breed_images WHERE breedId = :breedId ORDER BY id ASC")
     fun observeBreedImages(breedId: Int): Flow<List<BreedImageEntity>>
 

@@ -5,16 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.dogbreedsgallery.data.local.BreedEntity
 import com.example.dogbreedsgallery.data.local.BreedImageEntity
 import com.example.dogbreedsgallery.data.repository.BreedRepository
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed class BreedGalleryState {
-    // Ни одного фото нет — покажем единственную заглушку из BreedEntity.imageUrl
     data object Empty : BreedGalleryState()
-    // Есть хотя бы одно фото из Room
     data class Loaded(val images: List<BreedImageEntity>) : BreedGalleryState()
 }
 
@@ -23,6 +24,7 @@ sealed class BreedDetailsUiState {
     data class Success(val breed: BreedEntity) : BreedDetailsUiState()
     data object Error : BreedDetailsUiState()
 }
+
 class BreedDetailsViewModel(
     private val repository: BreedRepository,
     private val breedId: Int
@@ -56,6 +58,9 @@ class BreedDetailsViewModel(
             initialValue = BreedGalleryState.Empty
         )
 
+    private val _favoriteEvent = MutableSharedFlow<Boolean>()
+    val favoriteEvent: SharedFlow<Boolean> = _favoriteEvent.asSharedFlow()
+
     init {
         refreshGallery()
     }
@@ -69,7 +74,10 @@ class BreedDetailsViewModel(
     fun toggleFavorite() {
         viewModelScope.launch {
             val current = repository.getBreed(breedId) ?: return@launch
-            repository.setFavorite(breedId, !current.isFavorite)
+            val newFavorite = !current.isFavorite
+            repository.setFavorite(breedId, newFavorite)
+
+            _favoriteEvent.emit(newFavorite)
         }
     }
 }
